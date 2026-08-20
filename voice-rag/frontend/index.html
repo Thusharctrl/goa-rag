@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Voice RAG Demo</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      font-family: Inter, system-ui, sans-serif;
+    }
+    body {
+      margin: 0;
+      background: #0f172a;
+      color: #e2e8f0;
+    }
+    main {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 2rem 1rem 4rem;
+    }
+    h1 { margin-bottom: 0.25rem; }
+    .card {
+      background: #111827;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 1rem;
+      margin-top: 1rem;
+    }
+    label { display: block; margin-bottom: 0.5rem; font-weight: 600; }
+    textarea, select, input[type="file"] {
+      width: 100%;
+      box-sizing: border-box;
+      margin-bottom: 0.75rem;
+      padding: 0.75rem;
+      border-radius: 8px;
+      border: 1px solid #475569;
+      background: #0b1220;
+      color: inherit;
+    }
+    button {
+      background: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 0.7rem 1rem;
+      cursor: pointer;
+      margin-right: 0.5rem;
+    }
+    button.secondary { background: #475569; }
+    pre {
+      white-space: pre-wrap;
+      word-break: break-word;
+      background: #0b1220;
+      padding: 1rem;
+      border-radius: 8px;
+      border: 1px solid #334155;
+    }
+    .muted { color: #94a3b8; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Voice-Enabled RAG Demo</h1>
+    <p class="muted">MSMARCO-XI corpus · English + Hindi · Sarvam STT · Groq generation</p>
+
+    <section class="card">
+      <label for="language">Language</label>
+      <select id="language">
+        <option value="en">English</option>
+        <option value="hi">Hindi</option>
+      </select>
+
+      <label for="query">Text query</label>
+      <textarea id="query" rows="4" placeholder="Ask a question in English or Hindi"></textarea>
+      <button id="ask-text">Ask Text</button>
+    </section>
+
+    <section class="card">
+      <label for="audio">Voice query</label>
+      <input id="audio" type="file" accept="audio/*" />
+      <button id="ask-voice">Ask Voice</button>
+      <button id="record" class="secondary">Record</button>
+    </section>
+
+    <section class="card">
+      <h2>Response</h2>
+      <pre id="output">Submit a query to see the answer, citations, guardrails, and latency.</pre>
+    </section>
+  </main>
+
+  <script>
+    const output = document.getElementById("output");
+    let mediaRecorder;
+    let recordedChunks = [];
+
+    function render(data) {
+      output.textContent = JSON.stringify(data, null, 2);
+    }
+
+    document.getElementById("ask-text").addEventListener("click", async () => {
+      const query = document.getElementById("query").value.trim();
+      const language = document.getElementById("language").value;
+      if (!query) return;
+      const response = await fetch("/ask-text", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query, language }),
+      });
+      render(await response.json());
+    });
+
+    document.getElementById("ask-voice").addEventListener("click", async () => {
+      const fileInput = document.getElementById("audio");
+      const language = document.getElementById("language").value;
+      const file = fileInput.files[0];
+      if (!file) return;
+      const formData = new FormData();
+      formData.append("audio", file);
+      formData.append("language", language);
+      const response = await fetch("/ask-voice", { method: "POST", body: formData });
+      render(await response.json());
+    });
+
+    document.getElementById("record").addEventListener("click", async () => {
+      const button = document.getElementById("record");
+      if (mediaRecorder && mediaRecorder.state === "recording") {
+        mediaRecorder.stop();
+        button.textContent = "Record";
+        return;
+      }
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      recordedChunks = [];
+      mediaRecorder = new MediaRecorder(stream);
+      mediaRecorder.ondataavailable = (event) => recordedChunks.push(event.data);
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(recordedChunks, { type: "audio/webm" });
+        const file = new File([blob], "recording.webm", { type: "audio/webm" });
+        const transfer = new DataTransfer();
+        transfer.items.add(file);
+        document.getElementById("audio").files = transfer.files;
+        stream.getTracks().forEach((track) => track.stop());
+      };
+      mediaRecorder.start();
+      button.textContent = "Stop";
+    });
+  </script>
+</body>
+</html>

@@ -17,10 +17,7 @@ class RagRecord:
     selected: list[bool]
 
 
-HINDI_TRAIN_PARQUET = (
-    "https://huggingface.co/datasets/"
-    "ai4bharat/MSMARCO-XI/resolve/main/train/hintrain.parquet"
-)
+HINDI_VAL_PARQUET = settings.hf_parquet_url
 
 
 def _extract_passages(
@@ -72,7 +69,7 @@ def load_records(sample_size: int | None = None) -> list[RagRecord]:
 
     dataset = load_dataset(
         "parquet",
-        data_files=HINDI_TRAIN_PARQUET,
+        data_files=HINDI_VAL_PARQUET,
         split="train",
         streaming=True,
     )

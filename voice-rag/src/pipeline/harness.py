@@ -41,9 +41,8 @@ class RagHarness:
     ) -> AskResponse:
         started = time.perf_counter()
         flags: list[str] = []
-        guardrails_started = time.perf_counter()
-
         unsafe = check_unsafe_query(query)
+
         if unsafe:
             return self._blocked_response(
                 query=query,
@@ -63,7 +62,7 @@ class RagHarness:
         )
         hits = rerank(query, hits, settings.retrieval_top_k)
         retrieve_ms = (time.perf_counter() - retrieve_started) * 1000
-
+        guardrails_started = time.perf_counter()
         contexts = [hit["text"] for hit in hits]
         top_score = hits[0]["score"] if hits else 0.0
 

@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     groq_model: str = "llama-3.1-8b-instant"
     sarvam_api_key: str = ""
     retrieval_top_k: int = 5
-    min_retrieval_score: float = 0.25
+    min_retrieval_score: float = 0.55
     min_grounding_overlap: float = 0.08
     analytics_log_path: str = "data/analytics/latency.jsonl"
     hf_parquet_url: str = (

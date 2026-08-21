@@ -26,7 +26,7 @@ def chunk_sentences(
     for sentence in sentences:
         candidate = f"{buffer} {sentence}".strip() if buffer else sentence
         if buffer and len(candidate) > target_chars:
-            chunk_id = f"{query_id}:{passage_index}:{strategy}:{chunk_index}"
+            chunk_id = f"{language}:{query_id}:{passage_index}:{strategy}:{chunk_index}"
             chunks.append(
                 Chunk(
                     chunk_id=chunk_id,
@@ -43,7 +43,7 @@ def chunk_sentences(
             buffer = candidate
 
     if buffer:
-        chunk_id = f"{query_id}:{passage_index}:{strategy}:{chunk_index}"
+        chunk_id = f"{language}:{query_id}:{passage_index}:{strategy}:{chunk_index}"
         chunks.append(
             Chunk(
                 chunk_id=chunk_id,

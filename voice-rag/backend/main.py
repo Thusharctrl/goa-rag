@@ -11,8 +11,12 @@ from src.analytics.percentiles import compute_latency_percentiles, load_recent_e
 from src.pipeline.harness import RagHarness
 from src.pipeline.state import AskResponse, AskTextRequest
 from src.stt.sarvam_client import SarvamSTTClient
+from src.embeddings.model import get_embedding_model
 
 app = FastAPI(title="Voice RAG", version="0.1.0")
+@app.on_event("startup")
+def warmup_models() -> None:
+    get_embedding_model()
 harness = RagHarness()
 frontend_dir = Path(__file__).resolve().parent.parent / "frontend"
 

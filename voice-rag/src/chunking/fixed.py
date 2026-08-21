@@ -22,7 +22,7 @@ def chunk_fixed(
         end = min(start + window_size, len(text))
         piece = text[start:end].strip()
         if piece:
-            chunk_id = f"{query_id}:{passage_index}:{strategy}:{chunk_index}"
+            chunk_id = f"{language}:{query_id}:{passage_index}:{strategy}:{chunk_index}"
             chunks.append(
                 Chunk(
                     chunk_id=chunk_id,

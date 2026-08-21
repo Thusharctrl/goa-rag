@@ -12,7 +12,7 @@ def chunk_parent_child(
     if not text:
         return []
 
-    parent_id = f"{query_id}:{passage_index}:parent"
+    parent_id = f"{language}:{query_id}:{passage_index}:parent"
     parent = Chunk(
         chunk_id=parent_id,
         text=text,

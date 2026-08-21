@@ -1,7 +1,6 @@
 import re
 
 from src.config import settings
-from src.embeddings.model import embed_texts
 
 
 _UNSAFE_PATTERNS = [
@@ -27,12 +26,35 @@ def check_low_confidence(top_score: float) -> str | None:
 
 
 def check_off_topic(query: str, contexts: list[str]) -> str | None:
+    """
+    Cheap lexical sanity check.
+
+    Retrieval confidence remains the primary signal. This check only
+    catches cases where the retrieved text has essentially no overlap
+    with the query vocabulary.
+    """
     if not contexts:
         return "off_topic"
 
-    query_vec = embed_texts([query])[0]
-    context_vec = embed_texts([" ".join(contexts[:3])])[0]
-    similarity = sum(a * b for a, b in zip(query_vec, context_vec))
-    if similarity < 0.15:
+    query_terms = {
+        term.lower().strip(".,!?;:\"'()[]{}")
+        for term in query.split()
+        if len(term.strip(".,!?;:\"'()[]{}")) >= 3
+    }
+
+    if not query_terms:
         return "off_topic"
+
+    context_terms = set()
+    for context in contexts[:3]:
+        context_terms.update(
+            term.lower().strip(".,!?;:\"'()[]{}")
+            for term in context.split()
+        )
+
+    overlap = query_terms.intersection(context_terms)
+
+    if not overlap:
+        return "off_topic"
+
     return None

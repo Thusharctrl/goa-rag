@@ -9,6 +9,7 @@ from src.ingestion.cleaner import clean_text, non_empty
 
 @dataclass(frozen=True)
 class RagRecord:
+    row_index: int
     query_id: int
     language: str
     query: str
@@ -44,7 +45,7 @@ def _extract_passages(
     return texts, selected[:len(texts)]
 
 
-def _to_record(example: dict, language: str) -> RagRecord:
+def _to_record(example: dict, language: str, row_index: int) -> RagRecord:
     if language == "hi":
         query = clean_text(example.get("query"))
         answer = clean_text(example.get("Answer"))
@@ -55,6 +56,7 @@ def _to_record(example: dict, language: str) -> RagRecord:
     passages, selected = _extract_passages(example, language)
 
     return RagRecord(
+        row_index=row_index,
         query_id=int(example.get("query_id") or 0),
         language=language,
         query=query,
@@ -81,7 +83,7 @@ def load_records(sample_size: int | None = None) -> list[RagRecord]:
             break
 
         for language in ("hi", "en"):
-            record = _to_record(example, language)
+            record = _to_record(example, language, index)
 
             if record.query and record.passages:
                 records.append(record)

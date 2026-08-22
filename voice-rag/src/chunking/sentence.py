@@ -12,6 +12,7 @@ def chunk_sentences(
     strategy: str,
     language: str,
     query_id: int,
+    row_index: int,
     passage_index: int,
     target_chars: int = 256,
 ) -> list[Chunk]:
@@ -26,7 +27,7 @@ def chunk_sentences(
     for sentence in sentences:
         candidate = f"{buffer} {sentence}".strip() if buffer else sentence
         if buffer and len(candidate) > target_chars:
-            chunk_id = f"{language}:{query_id}:{passage_index}:{strategy}:{chunk_index}"
+            chunk_id = f"{language}:{row_index}:{query_id}:{passage_index}:{strategy}:{chunk_index}"
             chunks.append(
                 Chunk(
                     chunk_id=chunk_id,
@@ -34,6 +35,7 @@ def chunk_sentences(
                     strategy=strategy,
                     language=language,
                     query_id=query_id,
+                    row_index=row_index,
                     passage_index=passage_index,
                 )
             )
@@ -43,7 +45,7 @@ def chunk_sentences(
             buffer = candidate
 
     if buffer:
-        chunk_id = f"{language}:{query_id}:{passage_index}:{strategy}:{chunk_index}"
+        chunk_id = f"{language}:{row_index}:{query_id}:{passage_index}:{strategy}:{chunk_index}"
         chunks.append(
             Chunk(
                 chunk_id=chunk_id,
@@ -51,6 +53,7 @@ def chunk_sentences(
                 strategy=strategy,
                 language=language,
                 query_id=query_id,
+                row_index=row_index,
                 passage_index=passage_index,
             )
         )

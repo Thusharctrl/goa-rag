@@ -29,6 +29,7 @@ def build_index(sample_size: int | None = None, reset: bool = False) -> None:
                     strategy="sentence",
                     language=record.language,
                     query_id=record.query_id,
+                    row_index=record.row_index,
                     passage_index=passage_index,
                 )
             )
@@ -38,6 +39,7 @@ def build_index(sample_size: int | None = None, reset: bool = False) -> None:
                     strategy="fixed",
                     language=record.language,
                     query_id=record.query_id,
+                    row_index=record.row_index,
                     passage_index=passage_index,
                 )
             )
@@ -46,11 +48,12 @@ def build_index(sample_size: int | None = None, reset: bool = False) -> None:
                     passage,
                     language=record.language,
                     query_id=record.query_id,
+                    row_index=record.row_index,
                     passage_index=passage_index,
                 )
             )
 
-    batch_size = 128
+    batch_size = 4096
     for start in range(0, len(all_chunks), batch_size):
         index.upsert_chunks(all_chunks[start : start + batch_size])
 

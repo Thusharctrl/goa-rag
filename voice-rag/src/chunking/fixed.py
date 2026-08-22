@@ -7,6 +7,7 @@ def chunk_fixed(
     strategy: str,
     language: str,
     query_id: int,
+    row_index: int,
     passage_index: int,
     window_size: int = 512,
     overlap: int = 64,
@@ -22,7 +23,7 @@ def chunk_fixed(
         end = min(start + window_size, len(text))
         piece = text[start:end].strip()
         if piece:
-            chunk_id = f"{language}:{query_id}:{passage_index}:{strategy}:{chunk_index}"
+            chunk_id = f"{language}:{row_index}:{query_id}:{passage_index}:{strategy}:{chunk_index}"
             chunks.append(
                 Chunk(
                     chunk_id=chunk_id,
@@ -30,6 +31,7 @@ def chunk_fixed(
                     strategy=strategy,
                     language=language,
                     query_id=query_id,
+                    row_index=row_index,
                     passage_index=passage_index,
                 )
             )

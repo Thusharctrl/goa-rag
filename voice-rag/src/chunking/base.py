@@ -8,5 +8,6 @@ class Chunk:
     strategy: str
     language: str
     query_id: int
+    row_index: int
     passage_index: int
     parent_id: str | None = None

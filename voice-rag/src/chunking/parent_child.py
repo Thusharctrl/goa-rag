@@ -7,18 +7,20 @@ def chunk_parent_child(
     *,
     language: str,
     query_id: int,
+    row_index: int,
     passage_index: int,
 ) -> list[Chunk]:
     if not text:
         return []
 
-    parent_id = f"{language}:{query_id}:{passage_index}:parent"
+    parent_id = f"{language}:{row_index}:{query_id}:{passage_index}:parent"
     parent = Chunk(
         chunk_id=parent_id,
         text=text,
         strategy="parent_child",
         language=language,
         query_id=query_id,
+        row_index=row_index,
         passage_index=passage_index,
         parent_id=parent_id,
     )
@@ -29,6 +31,7 @@ def chunk_parent_child(
         strategy="parent_child",
         language=language,
         query_id=query_id,
+        row_index=row_index,
         passage_index=passage_index,
     ):
         children.append(
@@ -38,6 +41,7 @@ def chunk_parent_child(
                 strategy=child.strategy,
                 language=child.language,
                 query_id=child.query_id,
+                row_index=child.row_index,
                 passage_index=child.passage_index,
                 parent_id=parent_id,
             )

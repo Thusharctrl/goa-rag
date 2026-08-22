@@ -43,6 +43,7 @@ class VectorIndex:
                     "strategy": chunk.strategy,
                     "language": chunk.language,
                     "query_id": chunk.query_id,
+                    "row_index": chunk.row_index,
                     "passage_index": chunk.passage_index,
                     "parent_id": chunk.parent_id or "",
                 }

@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     collection_name: str = "msmarco_xi"
     embedding_model: str = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
     groq_api_key: str = ""
-    groq_model: str = "llama-3.1-8b-instant"
+    groq_model: str = "openai/gpt-oss-20b"  # llama-3.1-8b-instant is not accessible for this key
     sarvam_api_key: str = ""
     retrieval_top_k: int = 5
     min_retrieval_score: float = 0.55

@@ -16,11 +16,46 @@ def _sentences(text: str) -> list[str]:
     return [p.strip() for p in parts if p.strip()]
 
 
+_STOPWORDS = {
+    # English
+    "what", "how", "why", "who", "when", "where", "which", "is", "are", "was", "were",
+    "the", "a", "an", "of", "to", "in", "for", "on", "and", "or", "with", "this", "that",
+    "do", "does", "did", "can", "could", "would", "should", "it", "they", "them",
+    "what's", "how's", "who's", "there", "their", "here", "be", "been", "being",
+    # Hindi
+    "क्या", "है", "हैं", "था", "थी", "थे", "कैसे", "कौन", "क्यों", "कब", "कहाँ",
+    "में", "की", "के", "का", "और", "से", "को", "पर", "यह", "वह", "कि", "लिए", "एक",
+    "तो", "भी", "ही", "जो", "कर", "ने"
+}
+
+def _tokenize(text: str) -> set[str]:
+    """Lowercase, strip punctuation, split, and remove stopwords."""
+    cleaned = text.lower()
+    for p in ".,!?;:\"'()[]{}|-":
+        cleaned = cleaned.replace(p, " ")
+    
+    terms = set()
+    for t in cleaned.split():
+        if t not in _STOPWORDS and len(t) > 1:
+            terms.add(t)
+    return terms
+
+
 def _score(query_terms: set[str], sentence: str) -> float:
-    s_terms = set(sentence.lower().split())
-    if not s_terms:
+    s_terms = _tokenize(sentence)
+    if not query_terms or not s_terms:
         return 0.0
-    return len(query_terms & s_terms) / len(s_terms | query_terms)
+    
+    intersection = query_terms & s_terms
+    if not intersection:
+        return 0.0
+        
+    # Emphasize recall (finding the query terms) rather than strict Jaccard
+    # which heavily penalizes informative longer sentences.
+    recall = len(intersection) / len(query_terms)
+    density = len(intersection) / (len(s_terms) + 5.0)
+    
+    return (recall * 0.8) + (density * 0.2)
 
 
 def extract_answer(
@@ -37,11 +72,7 @@ def extract_answer(
     if not hits:
         return "I do not have enough information to answer that question.", 0.0
 
-    query_terms = {
-        t.lower().strip(".,!?;:\"'()[]{}")
-        for t in query.split()
-        if len(t) >= 3
-    }
+    query_terms = _tokenize(query)
 
     best: list[tuple[float, str]] = []
 

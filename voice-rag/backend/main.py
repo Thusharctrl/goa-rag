@@ -128,11 +128,12 @@ def ask_text(request: AskTextRequest) -> AskResponse:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
-@app.post("/ask-voice", response_model=AskResponse)
+@app.post("/ask-voice", response_model=FastAskResponse)
 async def ask_voice(
     audio: UploadFile = File(...),
     language: str = Form(default="en"),
-) -> AskResponse:
+    generate: bool = Form(default=False),
+) -> FastAskResponse:
     if language not in {"en", "hi"}:
         raise HTTPException(status_code=400, detail="language must be 'en' or 'hi'")
 
@@ -143,10 +144,11 @@ async def ask_voice(
 
     try:
         stt = _get_stt_client()
-        return _old_harness.ask_voice(
+        return _fast_harness.ask_voice(
             temp_path,
             language=language,
             transcribe=stt.transcribe,
+            generate=generate,
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc

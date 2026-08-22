@@ -102,10 +102,10 @@
       const query = document.getElementById("query").value.trim();
       const language = document.getElementById("language").value;
       if (!query) return;
-      const response = await fetch("/ask-text", {
+      const response = await fetch("/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query, language }),
+        body: JSON.stringify({ query, language, generate: false }),
       });
       render(await response.json());
     });

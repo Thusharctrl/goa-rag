@@ -50,7 +50,8 @@ class FastRagHarness:
         stt_ms: float | None = None,
         wall_start: float | None = None,
     ) -> FastAskResponse:
-        started = wall_start if wall_start is not None else time.perf_counter()
+        rag_start = time.perf_counter()
+        started = wall_start if wall_start is not None else rag_start
 
         # 1. Input guardrail — unsafe keyword check (pre-retrieval)
         g0 = time.perf_counter()
@@ -66,7 +67,7 @@ class FastRagHarness:
                 latencies=FastLatencyBreakdown(
                     stt_ms=stt_ms,
                     guardrails_ms=guardrails_ms,
-                    fast_path_ms=(time.perf_counter() - started) * 1000,
+                    fast_path_ms=(time.perf_counter() - rag_start) * 1000,
                     total_ms=(time.perf_counter() - started) * 1000,
                 ),
             ))
@@ -118,7 +119,8 @@ class FastRagHarness:
         guardrails_ms += (time.perf_counter() - g1) * 1000
 
         if flags:
-            fast_ms = (time.perf_counter() - started) * 1000
+            fast_ms = (time.perf_counter() - rag_start) * 1000
+            total_ms = (time.perf_counter() - started) * 1000
             return self._finalize(FastAskResponse(
                 query=query,
                 transcript=transcript,
@@ -140,7 +142,7 @@ class FastRagHarness:
                     retrieve_ms=retrieve_ms,
                     guardrails_ms=guardrails_ms,
                     fast_path_ms=fast_ms,
-                    total_ms=fast_ms,
+                    total_ms=total_ms,
                 ),
             ))
 
@@ -149,7 +151,7 @@ class FastRagHarness:
         extractive_answer, ext_score = extract_answer(query, hits)
         extract_ms = (time.perf_counter() - x0) * 1000
 
-        fast_ms = (time.perf_counter() - started) * 1000
+        fast_ms = (time.perf_counter() - rag_start) * 1000
 
         # 5. Output grounding check on extractive answer
         g2 = time.perf_counter()

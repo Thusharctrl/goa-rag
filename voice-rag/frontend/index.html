@@ -1,149 +1,665 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Voice RAG Demo</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Voice RAG</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     :root {
-      color-scheme: light dark;
-      font-family: Inter, system-ui, sans-serif;
+      --bg: #09090b;
+      --bg-panel: #18181b;
+      --border: #27272a;
+      --text-main: #f4f4f5;
+      --text-sub: #a1a1aa;
+      --accent-color: #5EEAD4;
+      --recording: #5EEAD4; /* Use accent for recording pulse to keep it monotone/unified */
+      --font-ui: 'Inter', system-ui, -apple-system, sans-serif;
     }
     body {
       margin: 0;
-      background: #0f172a;
-      color: #e2e8f0;
+      background: var(--bg);
+      color: var(--text-main);
+      font-family: var(--font-ui);
+      -webkit-font-smoothing: antialiased;
+      line-height: 1.5;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 2rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-panel);
+    }
+    .logo-container {
+      display: flex;
+      flex-direction: column;
+    }
+    .logo {
+      font-weight: 600;
+      font-size: 1.125rem;
+      letter-spacing: -0.02em;
+    }
+    .subtitle {
+      font-size: 0.75rem;
+      color: var(--text-sub);
+    }
+    .nav-utils {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .status-indicator {
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
+      font-size: 0.75rem;
+      color: var(--text-sub);
+    }
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent-color);
+    }
+    select, button, textarea {
+      font-family: inherit;
+    }
+    select:focus, textarea:focus {
+      border-color: var(--accent-color);
+      box-shadow: 0 0 0 1px var(--accent-color);
+    }
+    select {
+      background: var(--bg);
+      color: var(--text-main);
+      border: 1px solid var(--border);
+      padding: 0.375rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      outline: none;
     }
     main {
-      max-width: 900px;
+      max-width: 768px;
       margin: 0 auto;
-      padding: 2rem 1rem 4rem;
+      padding: 4rem 1.5rem;
     }
-    h1 { margin-bottom: 0.25rem; }
-    .card {
-      background: #111827;
-      border: 1px solid #334155;
+    .hero {
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+    .hero h1 {
+      font-size: 2.25rem;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      margin: 0 0 0.5rem;
+    }
+    .hero p {
+      color: var(--text-sub);
+      font-size: 1rem;
+      margin: 0;
+    }
+    .workspace {
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+    .voice-box {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 3rem 2rem;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .mic-button {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: var(--border);
+      border: none;
+      color: var(--text-main);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+    .mic-button:hover {
+      background: #3f3f46;
+    }
+    .mic-button.recording {
+      background: var(--recording);
+      animation: pulse 1.5s infinite;
+    }
+    .mic-button svg {
+      width: 32px;
+      height: 32px;
+      stroke-width: 1.5;
+    }
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(94, 234, 212, 0.4); }
+      70% { box-shadow: 0 0 0 20px rgba(94, 234, 212, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(94, 234, 212, 0); }
+    }
+    .voice-status-text {
+      margin-top: 1rem;
+      font-size: 0.875rem;
+      color: var(--text-sub);
+    }
+    
+    .divider {
+      display: flex;
+      align-items: center;
+      text-align: center;
+      color: var(--border);
+      font-size: 0.875rem;
+    }
+    .divider::before, .divider::after {
+      content: '';
+      flex: 1;
+      border-bottom: 1px solid var(--border);
+    }
+    .divider::before { margin-right: 1rem; }
+    .divider::after { margin-left: 1rem; }
+    
+    .text-box {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
       border-radius: 12px;
       padding: 1rem;
-      margin-top: 1rem;
     }
-    label { display: block; margin-bottom: 0.5rem; font-weight: 600; }
-    textarea, select, input[type="file"] {
+    textarea {
       width: 100%;
-      box-sizing: border-box;
-      margin-bottom: 0.75rem;
-      padding: 0.75rem;
-      border-radius: 8px;
-      border: 1px solid #475569;
-      background: #0b1220;
-      color: inherit;
-    }
-    button {
-      background: #2563eb;
-      color: white;
+      background: transparent;
       border: none;
-      border-radius: 8px;
-      padding: 0.7rem 1rem;
-      cursor: pointer;
-      margin-right: 0.5rem;
+      color: var(--text-main);
+      resize: none;
+      outline: none;
+      font-family: inherit;
+      font-size: 1rem;
+      box-sizing: border-box;
     }
-    button.secondary { background: #475569; }
-    pre {
-      white-space: pre-wrap;
-      word-break: break-word;
-      background: #0b1220;
+    .text-actions {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 0.5rem;
+    }
+    .btn {
+      background: var(--text-main);
+      color: var(--bg);
+      border: 1px solid transparent;
+      padding: 0.5rem 1.25rem;
+      border-radius: 6px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn:hover { background: var(--accent-color); }
+    .btn:focus { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent-color); outline: none; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    
+    /* Pipeline */
+    .pipeline {
+      display: none;
+      justify-content: space-between;
+      margin-top: 2rem;
+      padding: 1rem 2rem;
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+    .pipeline-step {
+      font-size: 0.75rem;
+      color: var(--text-sub);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: color 0.3s;
+    }
+    .pipeline-step.active { color: var(--text-main); }
+    .pipeline-step.done { color: var(--accent-color); }
+    
+    /* Results */
+    .results {
+      display: none;
+      margin-top: 2rem;
+      animation: fadeIn 0.3s ease-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .result-section { margin-bottom: 2.5rem; }
+    .section-label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-sub);
+      margin-bottom: 0.75rem;
+    }
+    .answer-text {
+      font-size: 1.125rem;
+      line-height: 1.6;
+      font-weight: 400;
+      letter-spacing: -0.01em;
+    }
+    .transcript-text {
+      font-family: inherit;
+      font-size: 1rem;
+      color: var(--text-sub);
+      background: var(--bg-panel);
       padding: 1rem;
       border-radius: 8px;
-      border: 1px solid #334155;
+      border: 1px solid var(--border);
     }
-    .muted { color: #94a3b8; }
+    .citations {
+      display: grid;
+      gap: 1rem;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    }
+    .citation-card {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      padding: 1rem;
+      border-radius: 8px;
+    }
+    .citation-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+      font-size: 0.75rem;
+    }
+    .citation-source { color: var(--text-main); font-weight: 500; }
+    .citation-score { color: var(--text-sub); font-family: monospace; }
+    .citation-text { font-size: 0.875rem; color: var(--text-sub); }
+    
+    .metrics-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+    .metric-pill {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      padding: 0.5rem 0.875rem;
+      border-radius: 8px;
+      font-size: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .metric-label { color: var(--text-sub); }
+    .metric-value { font-family: monospace; color: var(--text-main); }
+    .metric-fast { border-color: rgba(94, 234, 212, 0.3); background: rgba(94, 234, 212, 0.05); }
+    .metric-fast .metric-value { color: var(--accent-color); font-weight: 600; }
+    
+    .guardrail-msg {
+      padding: 1rem 1.5rem;
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+      border-radius: 8px;
+      color: #f87171;
+      font-weight: 500;
+      margin-bottom: 2rem;
+    }
+    
+    details {
+      margin-top: 3rem;
+      border-top: 1px solid var(--border);
+      padding-top: 1.5rem;
+    }
+    summary {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-sub);
+      cursor: pointer;
+      user-select: none;
+      outline: none;
+    }
+    pre {
+      background: var(--bg-panel);
+      padding: 1rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      font-size: 0.75rem;
+      overflow-x: auto;
+      color: var(--text-sub);
+      margin-top: 1rem;
+    }
   </style>
 </head>
 <body>
-  <main>
-    <h1>Voice-Enabled RAG Demo</h1>
-    <p class="muted">MSMARCO-XI corpus · English + Hindi · Sarvam STT · Groq generation</p>
 
-    <section class="card">
-      <label for="language">Language</label>
-      <select id="language">
+  <header>
+    <div class="brand" style="display: flex; align-items: center; gap: 1rem;">
+      <svg class="brand-logo" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--accent-color)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 14 L10 8 L16 14 20 10" />
+        <circle cx="10" cy="8" r="2" fill="var(--bg-panel)" />
+        <circle cx="16" cy="14" r="2" fill="var(--bg-panel)" />
+        <circle cx="20" cy="10" r="2" fill="var(--bg-panel)" />
+        <circle cx="4" cy="14" r="2" fill="var(--bg-panel)" />
+      </svg>
+      <div class="logo-container">
+        <div class="logo">VoiceRAG</div>
+        <div class="subtitle">Voice-Enabled Retrieval</div>
+      </div>
+    </div>
+    <div class="nav-utils">
+      <div class="status-indicator"><div class="dot"></div> Operational</div>
+      <select id="language" aria-label="Language Selector">
         <option value="en">English</option>
         <option value="hi">Hindi</option>
       </select>
+    </div>
+  </header>
 
-      <label for="query">Text query</label>
-      <textarea id="query" rows="4" placeholder="Ask a question in English or Hindi"></textarea>
-      <button id="ask-text">Ask Text</button>
-    </section>
+  <main>
+    <div class="hero">
+      <h1>Ask your knowledge base.</h1>
+      <p>Speak or type a question and get a grounded answer from the retrieved context.</p>
+    </div>
 
-    <section class="card">
-      <label for="audio">Voice query</label>
-      <input id="audio" type="file" accept="audio/*" />
-      <button id="ask-voice">Ask Voice</button>
-      <button id="record" class="secondary">Record</button>
-    </section>
+    <div class="workspace">
+      <!-- Voice Workspace -->
+      <div class="voice-box">
+        <div class="section-label">Ask with your voice</div>
+        <button class="mic-button" id="record-btn" aria-label="Record Voice">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+            <line x1="12" x2="12" y1="19" y2="22"/>
+          </svg>
+        </button>
+        <div class="voice-status-text" id="voice-status">Tap to record</div>
+      </div>
+      
+      <div class="divider">Or type your question</div>
+      
+      <!-- Text Workspace -->
+      <div class="text-box">
+        <textarea id="text-input" rows="3" placeholder="Enter your query here..."></textarea>
+        <div class="text-actions">
+          <button class="btn" id="ask-btn">Ask</button>
+        </div>
+      </div>
+    </div>
 
-    <section class="card">
-      <h2>Response</h2>
-      <pre id="output">Submit a query to see the answer, citations, guardrails, and latency.</pre>
-    </section>
+    <!-- Pipeline UI -->
+    <div class="pipeline" id="pipeline">
+      <div class="pipeline-step" id="step-voice">🎙 Voice</div>
+      <div class="pipeline-step" id="step-transcribe">📝 Transcript</div>
+      <div class="pipeline-step" id="step-retrieve">🔍 Retrieval</div>
+      <div class="pipeline-step" id="step-answer">💡 Answer</div>
+    </div>
+
+    <!-- Results UI -->
+    <div class="results" id="results">
+      <div id="error-container"></div>
+      
+      <div id="success-container" style="display: none;">
+        <div class="result-section" id="transcript-section">
+          <div class="section-label">You Asked</div>
+          <div class="transcript-text" id="transcript-text"></div>
+        </div>
+        
+        <div class="result-section">
+          <div class="section-label">Answer</div>
+          <div class="answer-text" id="answer-text"></div>
+        </div>
+
+        <div class="result-section" id="citations-section">
+          <div class="section-label">Sources</div>
+          <div class="citations" id="citations-list"></div>
+        </div>
+        
+        <div class="result-section" id="metrics-section">
+          <div class="section-label">Pipeline Metrics</div>
+          <div class="metrics-grid" id="metrics-grid"></div>
+        </div>
+      </div>
+
+      <details>
+        <summary>Developer Details</summary>
+        <pre id="raw-json"></pre>
+      </details>
+    </div>
   </main>
 
   <script>
-    const output = document.getElementById("output");
+    // State
     let mediaRecorder;
     let recordedChunks = [];
+    let isRecording = false;
 
-    function render(data) {
-      output.textContent = JSON.stringify(data, null, 2);
-    }
+    // Elements
+    const recordBtn = document.getElementById("record-btn");
+    const voiceStatus = document.getElementById("voice-status");
+    const askBtn = document.getElementById("ask-btn");
+    const textInput = document.getElementById("text-input");
+    const languageSelect = document.getElementById("language");
+    
+    const pipelineUI = document.getElementById("pipeline");
+    const steps = {
+      voice: document.getElementById("step-voice"),
+      transcribe: document.getElementById("step-transcribe"),
+      retrieve: document.getElementById("step-retrieve"),
+      answer: document.getElementById("step-answer")
+    };
+    
+    const resultsUI = document.getElementById("results");
+    const errorContainer = document.getElementById("error-container");
+    const successContainer = document.getElementById("success-container");
+    const transcriptSection = document.getElementById("transcript-section");
+    const transcriptText = document.getElementById("transcript-text");
+    const answerText = document.getElementById("answer-text");
+    const citationsList = document.getElementById("citations-list");
+    const metricsGrid = document.getElementById("metrics-grid");
+    const citationsSection = document.getElementById("citations-section");
+    const rawJson = document.getElementById("raw-json");
 
-    document.getElementById("ask-text").addEventListener("click", async () => {
-      const query = document.getElementById("query").value.trim();
-      const language = document.getElementById("language").value;
-      if (!query) return;
-      const response = await fetch("/ask", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query, language, generate: false }),
-      });
-      render(await response.json());
-    });
-
-    document.getElementById("ask-voice").addEventListener("click", async () => {
-      const fileInput = document.getElementById("audio");
-      const language = document.getElementById("language").value;
-      const file = fileInput.files[0];
-      if (!file) return;
-      const formData = new FormData();
-      formData.append("audio", file);
-      formData.append("language", language);
-      const response = await fetch("/ask-voice", { method: "POST", body: formData });
-      render(await response.json());
-    });
-
-    document.getElementById("record").addEventListener("click", async () => {
-      const button = document.getElementById("record");
-      if (mediaRecorder && mediaRecorder.state === "recording") {
-        mediaRecorder.stop();
-        button.textContent = "Record";
+    // UI Helpers
+    function setPipeline(state, activeStep=null) {
+      if (state === 'hide') {
+        pipelineUI.style.display = 'none';
         return;
       }
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      recordedChunks = [];
-      mediaRecorder = new MediaRecorder(stream);
-      mediaRecorder.ondataavailable = (event) => recordedChunks.push(event.data);
-      mediaRecorder.onstop = () => {
-        const blob = new Blob(recordedChunks, { type: "audio/webm" });
-        const file = new File([blob], "recording.webm", { type: "audio/webm" });
-        const transfer = new DataTransfer();
-        transfer.items.add(file);
-        document.getElementById("audio").files = transfer.files;
-        stream.getTracks().forEach((track) => track.stop());
-      };
-      mediaRecorder.start();
-      button.textContent = "Stop";
+      pipelineUI.style.display = 'flex';
+      Object.keys(steps).forEach(k => {
+        steps[k].className = 'pipeline-step';
+      });
+      if (activeStep) steps[activeStep].classList.add('active');
+    }
+
+    function resetResults() {
+      resultsUI.style.display = 'none';
+      errorContainer.innerHTML = '';
+      successContainer.style.display = 'none';
+      transcriptSection.style.display = 'none';
+      citationsList.innerHTML = '';
+      metricsGrid.innerHTML = '';
+      rawJson.textContent = '';
+      citationsSection.style.display = 'none';
+    }
+
+    function renderResponse(data, isVoice) {
+      setPipeline('hide');
+      resultsUI.style.display = 'block';
+      rawJson.textContent = JSON.stringify(data, null, 2);
+
+      let hasError = false;
+      // Handle Guardrails/Errors
+      if (data.guardrail_flags && data.guardrail_flags.length > 0) {
+        let msg = "This request cannot be processed.";
+        if (data.guardrail_flags.includes("low_confidence")) msg = "Not enough reliable context to answer.";
+        if (data.guardrail_flags.includes("off_topic")) msg = "This question isn't supported by the available context.";
+        
+        errorContainer.innerHTML = `<div class="guardrail-msg">${msg}</div>`;
+        hasError = true;
+      }
+      
+      successContainer.style.display = 'block';
+      
+      // Transcript
+      if (isVoice && data.transcript) {
+        transcriptSection.style.display = 'block';
+        transcriptText.textContent = data.transcript;
+      }
+
+      // Answer
+      if (data.answer) {
+        answerText.textContent = data.answer;
+      } else {
+        answerText.textContent = hasError ? "No answer returned." : "An error occurred.";
+      }
+
+      // Citations
+      if (data.citations && data.citations.length > 0) {
+        citationsSection.style.display = 'block';
+        data.citations.forEach((cit, i) => {
+          const card = document.createElement('div');
+          card.className = 'citation-card';
+          card.innerHTML = `
+            <div class="citation-header">
+              <span class="citation-source">Source ${String(i+1).padStart(2, '0')}</span>
+              <span class="citation-score">Relevance: ${cit.score.toFixed(3)} ${cit.strategy ? '('+cit.strategy+')' : ''}</span>
+            </div>
+            <div class="citation-text">${cit.text}</div>
+          `;
+          citationsList.appendChild(card);
+        });
+      }
+
+      // Metrics
+      if (data.latencies) {
+        const renderMetric = (label, val, highlight=false) => {
+          if (val == null) return;
+          const d = document.createElement('div');
+          d.className = 'metric-pill';
+          if (highlight) d.classList.add('metric-fast');
+          d.innerHTML = `<span class="metric-label">${label}</span><span class="metric-value">${val.toFixed(1)}ms</span>`;
+          metricsGrid.appendChild(d);
+        };
+        
+        renderMetric('STT', data.latencies.stt_ms);
+        renderMetric('Embed', data.latencies.embed_ms);
+        renderMetric('Retrieve', data.latencies.retrieve_ms);
+        renderMetric('Extract', data.latencies.extract_ms);
+        renderMetric('Fast Path', data.latencies.fast_path_ms, true);
+        renderMetric('LLM', data.latencies.llm_ms);
+        renderMetric('Total', data.latencies.total_ms);
+      }
+    }
+
+    async function handleTextQuery() {
+      const query = textInput.value.trim();
+      const language = languageSelect.value;
+      if (!query) return;
+
+      resetResults();
+      setPipeline('show', 'retrieve');
+      askBtn.disabled = true;
+      askBtn.textContent = 'Processing...';
+
+      try {
+        const response = await fetch("/ask", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query, language, generate: false }),
+        });
+        const data = await response.json();
+        renderResponse(data, false);
+      } catch (err) {
+        setPipeline('hide');
+        resultsUI.style.display = 'block';
+        errorContainer.innerHTML = `<div class="guardrail-msg">Something went wrong. Please try again.</div>`;
+      } finally {
+        askBtn.disabled = false;
+        askBtn.textContent = 'Ask';
+      }
+    }
+
+    askBtn.addEventListener("click", handleTextQuery);
+    textInput.addEventListener("keydown", (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        handleTextQuery();
+      }
     });
+
+    // Voice Flow
+    async function startRecording() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        recordedChunks = [];
+        mediaRecorder = new MediaRecorder(stream);
+        
+        mediaRecorder.ondataavailable = e => recordedChunks.push(e.data);
+        mediaRecorder.onstop = handleVoiceUpload;
+        
+        mediaRecorder.start();
+        isRecording = true;
+        recordBtn.classList.add('recording');
+        
+        let secs = 0;
+        voiceStatus.textContent = `Recording 00:00`;
+        recordBtn.timer = setInterval(() => {
+          secs++;
+          voiceStatus.textContent = `Recording 00:${String(secs).padStart(2,'0')}`;
+        }, 1000);
+        
+      } catch (err) {
+        alert("Microphone access denied or unavailable.");
+      }
+    }
+
+    function stopRecording() {
+      if (mediaRecorder && mediaRecorder.state === "recording") {
+        mediaRecorder.stop();
+        mediaRecorder.stream.getTracks().forEach(t => t.stop());
+      }
+      isRecording = false;
+      recordBtn.classList.remove('recording');
+      clearInterval(recordBtn.timer);
+      voiceStatus.textContent = "Processing...";
+    }
+
+    async function handleVoiceUpload() {
+      const blob = new Blob(recordedChunks, { type: "audio/webm" });
+      const language = languageSelect.value;
+      
+      const formData = new FormData();
+      formData.append("audio", blob, "recording.webm");
+      formData.append("language", language);
+      formData.append("generate", "false"); 
+
+      resetResults();
+      setPipeline('show', 'transcribe');
+
+      try {
+        const response = await fetch("/ask-voice", { method: "POST", body: formData });
+        const data = await response.json();
+        renderResponse(data, true);
+        voiceStatus.textContent = "Tap to record";
+      } catch (err) {
+        setPipeline('hide');
+        resultsUI.style.display = 'block';
+        errorContainer.innerHTML = `<div class="guardrail-msg">Something went wrong processing audio.</div>`;
+        voiceStatus.textContent = "Tap to record";
+      }
+    }
+
+    recordBtn.addEventListener("click", () => {
+      if (isRecording) stopRecording();
+      else startRecording();
+    });
+
   </script>
 </body>
 </html>

@@ -38,20 +38,24 @@ class RagHarness:
         language: str,
         transcript: str | None = None,
         stt_ms: float | None = None,
+        wall_start: float | None = None,
     ) -> AskResponse:
-        started = time.perf_counter()
-        flags: list[str] = []
-        unsafe = check_unsafe_query(query)
+        started = wall_start if wall_start is not None else time.perf_counter()
 
+        guardrails_started = time.perf_counter()
+        unsafe = check_unsafe_query(query)
         if unsafe:
-            return self._blocked_response(
-                query=query,
-                language=language,
-                transcript=transcript,
-                flag=unsafe,
-                started=started,
-                stt_ms=stt_ms,
-                guardrails_ms=(time.perf_counter() - guardrails_started) * 1000,
+            guardrails_ms = (time.perf_counter() - guardrails_started) * 1000
+            return self._finalize_response(
+                self._blocked_response(
+                    query=query,
+                    language=language,
+                    transcript=transcript,
+                    flag=unsafe,
+                    stt_ms=stt_ms,
+                    guardrails_ms=guardrails_ms,
+                    total_ms=(time.perf_counter() - started) * 1000,
+                )
             )
 
         retrieve_started = time.perf_counter()
@@ -62,7 +66,9 @@ class RagHarness:
         )
         hits = rerank(query, hits, settings.retrieval_top_k)
         retrieve_ms = (time.perf_counter() - retrieve_started) * 1000
+
         guardrails_started = time.perf_counter()
+        flags: list[str] = []
         contexts = [hit["text"] for hit in hits]
         top_score = hits[0]["score"] if hits else 0.0
 
@@ -76,7 +82,7 @@ class RagHarness:
         guardrails_ms = (time.perf_counter() - guardrails_started) * 1000
 
         if flags:
-            return AskResponse(
+            response = AskResponse(
                 query=query,
                 transcript=transcript,
                 answer="I do not have enough reliable information to answer that question.",
@@ -98,16 +104,19 @@ class RagHarness:
                     total_ms=(time.perf_counter() - started) * 1000,
                 ),
             )
+            return self._finalize_response(response)
 
         generate_started = time.perf_counter()
         answer = self._get_generator().generate(query, contexts, language)
         generate_ms = (time.perf_counter() - generate_started) * 1000
 
+        grounding_started = time.perf_counter()
         ungrounded = check_ungrounded_answer(
             answer,
             contexts,
             settings.min_grounding_overlap,
         )
+        guardrails_ms += (time.perf_counter() - grounding_started) * 1000
         if ungrounded:
             flags.append(ungrounded)
             answer = "I could not verify this answer against the retrieved passages."
@@ -134,16 +143,7 @@ class RagHarness:
                 total_ms=(time.perf_counter() - started) * 1000,
             ),
         )
-
-        log_latency(
-            {
-                "query": query,
-                "language": language,
-                "guardrail_flags": flags,
-                "latencies": response.latencies.model_dump(),
-            }
-        )
-        return response
+        return self._finalize_response(response)
 
     def _blocked_response(
         self,
@@ -152,11 +152,11 @@ class RagHarness:
         language: str,
         transcript: str | None,
         flag: str,
-        started: float,
         stt_ms: float | None,
         guardrails_ms: float,
+        total_ms: float,
     ) -> AskResponse:
-        response = AskResponse(
+        return AskResponse(
             query=query,
             transcript=transcript,
             answer="This request cannot be processed for safety reasons.",
@@ -165,15 +165,17 @@ class RagHarness:
             latencies=LatencyBreakdown(
                 stt_ms=stt_ms,
                 guardrails_ms=guardrails_ms,
-                total_ms=(time.perf_counter() - started) * 1000,
+                total_ms=total_ms,
             ),
         )
+
+    def _finalize_response(self, response: AskResponse) -> AskResponse:
         log_latency(
             {
-                "query": query,
-                "language": language,
-                "guardrail_flags": [flag],
-                "latencies": response.latencies.model_dump(),
+                "query": response.query,
+                "language": response.language,
+                "guardrail_flags": response.guardrail_flags,
+                "latencies": response.latencies.model_dump(exclude_none=False),
             }
         )
         return response
@@ -185,10 +187,12 @@ class RagHarness:
         language: str,
         transcribe: Callable[[str, str], tuple[str, float]],
     ) -> AskResponse:
+        started = time.perf_counter()
         transcript, stt_ms = transcribe(audio_path, language)
         return self.ask_text(
             transcript,
             language=language,
             transcript=transcript,
             stt_ms=stt_ms,
+            wall_start=started,
         )

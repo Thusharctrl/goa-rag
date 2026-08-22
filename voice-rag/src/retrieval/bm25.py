@@ -1,10 +1,17 @@
-"""Optional lexical retrieval stub for future hybrid search."""
+"""Optional lexical retrieval helper (not used by the current MVP pipeline)."""
 
-from rank_bm25 import BM25Okapi
+from __future__ import annotations
 
 
 class BM25Retriever:
     def __init__(self, documents: list[str]) -> None:
+        try:
+            from rank_bm25 import BM25Okapi
+        except ImportError as exc:  # pragma: no cover - optional extension
+            raise ImportError(
+                "BM25 retrieval is optional. Install rank-bm25 to use this helper."
+            ) from exc
+
         tokenized = [doc.lower().split() for doc in documents]
         self._bm25 = BM25Okapi(tokenized)
         self._documents = documents
